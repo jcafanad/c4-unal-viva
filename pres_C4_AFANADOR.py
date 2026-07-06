@@ -3087,5 +3087,44 @@ def conclusiones_display(coop_dec, coop_dig, mo):
     return
 
 
+@app.cell(hide_code=True)
+def bibliografia_display(mo):
+
+    _refs_teoria = mo.callout(mo.md(r"""
+    - Dung, P.M. (1995). On the acceptability of arguments and its fundamental role in nonmonotonic reasoning, logic programming and n-person games. *Artificial Intelligence*, 77(2), 321–357.
+    - Lai, T.L., & Robbins, H. (1985). Asymptotically efficient adaptive allocation rules. *Advances in Applied Mathematics*, 6(1), 4–22.
+    - Auer, P., Cesa-Bianchi, N., & Fischer, P. (2002). Finite-time analysis of the multiarmed bandit problem. *Machine Learning*, 47(2–3), 235–256.
+    - Solan, E., & Vieille, N. (2001). Quitting games. *Mathematics of Operations Research*, 26(2), 265–285.
+    - Afanador, J., Baptista, M.S., & Oren, N. (2019). Algorithms for recursive delegation. *AI Communications*, 32(4), 303–317.
+    - Afanador, J., Oren, N., & Baptista, M.S. (2019). A coalitional algorithm for recursive delegation. In *PRIMA 2019: Principles and Practice of Multi-Agent Systems*, LNAI vol. 11873 (pp. 405–422). Springer.
+    - Libman, A., Oren, N., & Yun, B. (2024). Abstract weighted based gradual semantics in argumentation theory. arXiv:2401.11472.
+    """), kind="info")
+
+    _refs_territorio = mo.callout(mo.md(r"""
+    - Ministerio de Ambiente y Desarrollo Sostenible de Colombia. Resolución 1555 de 2016 (delimitación del páramo Iguaque-Merchán; prohibición de minería).
+    - Corporación Autónoma Regional de Boyacá (Corpoboyacá). Resolución 3655 de 2010 (Licencia Ambiental, Contrato de Concesión Minera N.º 8960, SUMICOL/Grupo Corona).
+    - Agencia Nacional de Minería (Colombia). Título Minero N.º 00141-15 (Cerámica Italia S.A.).
+    - IDEAM & Instituto Alexander von Humboldt (IAvH). Límite cartográfico oficial del páramo Iguaque-Merchán.
+    """), kind="info")
+
+    _refs_visuales = mo.callout(mo.md(r"""
+    - © OpenStreetMap contributors. Mapa base (tiles).
+    - Petruss. *Laguna de Iguaque detalle*. Wikimedia Commons, CC BY 3.0.
+    """), kind="info")
+
+    _refs_accordion = mo.accordion({
+        "Marco teórico y algorítmico": _refs_teoria,
+        "Fuentes territoriales y normativas — Páramo Iguaque-Merchán": _refs_territorio,
+        "Fuentes cartográficas y visuales": _refs_visuales,
+    })
+
+    mo.vstack([
+        mo.md("## Referencias"),
+        _refs_accordion,
+    ])
+
+    return
+
+
 if __name__ == "__main__":
     app.run()
