@@ -211,10 +211,12 @@ def intro_actores_plan(mo):
     mo.md(r"""
     ### Los actores (crowdsourcing con topología, no brazos i.i.d.)
 
-    `W0–W2` cadena paramuna comunitaria · `W3` CAR con un enfoque orientado a las ciencias ambientales ·
-    `W4` agente que opera en el registro cosmológico-territorial ·
+    `W0, W1, W2, W4` circuito comunitario paramuno · `W1` sin acceso institucional
+    directo — voz vía W0 y la Junta de Acción Comunal (W2) ·
+    `W3` CAR, autoridad técnica ambiental regional, no centralizada ·
+    `W4` registro cosmológico-territorial — contra-historia muisca ·
     `EC` reencuadre extractivista en registro ambiental-institucional ·
-    `EM` concesión de materiales en registro jurídico-estatal.
+    `EM` concesión minera en registro jurídico-estatal.
 
     ### El plan de esta clase
 
@@ -337,7 +339,7 @@ def territorio_36_setup(
     _nblocks36 = _bnext36
 
     _AUTOR_DE_TIPO36 = {
-        "A1_delimitacion": "EC", "A2_concesion": "EM", "A3_hidrologico": "W1",
+        "A1_delimitacion": "EC", "A2_concesion": "EM", "A3_hidrologico": "W3",
         "A4_comunidad": "W0", "A5_bachue_iguaque": "W4", "A6_cosmo_serpiente": "W4",
     }
     _hub_offset36 = {"A5_bachue_iguaque": -0.55, "A6_cosmo_serpiente": 0.55}
@@ -497,11 +499,12 @@ def territorio_grafo_sketch(mo, territorio_36_gif):
         "Actores del Páramo": mo.md(r"""
     | Actor | Rol territorial | Posición en la red |
     |:---|:---|:---|
-    | **W0, W1** | Familias campesinas — monitoreo directo de la vereda | Triángulo local 0–1–2 |
-    | **W2** | Junta de Acción Comunal — puente organizativo local | Conecta vereda con red regional |
-    | **W3** | CAR — puente organizativo regional | Conecta red regional con territorio distal |
-    | **W4** | Guardián del mundo de vida paramuno y campesino | Cadena distal 3–4 |
-    | **EC** | Estado colombiano — delimitación técnica | Enlazado a W0 y W1 (Art. 79) — aislado de W2–W4 |
+    | **W0** | Familias campesinas — monitoreo directo de la vereda | Triángulo local, enlazada a EC |
+    | **W1** | Familias campesinas — sin acceso directo a canales institucionales | Cadena distal, conecta con W4 |
+    | **W2** | Junta de Acción Comunal — puente organizativo local | Conecta el triángulo local con la cadena distal |
+    | **W3** | CAR — autoridad ambiental regional, no centralizada | Enlazada a EC y al triángulo local |
+    | **W4** | Guardián del mundo de vida paramuno y campesino | Extremo de la cadena distal |
+    | **EC** | Estado colombiano — delimitación técnica | Enlazado a W0 y W3 (Art. 79) — aislado de W1, W2 y W4 |
     | **EM** | Empresa de materiales — concesión de explotación | Aislado — único canal hacia la comunidad es vía EC |
     """),
         "Los seis temas argumentativos": mo.md(r"""
@@ -512,7 +515,7 @@ def territorio_grafo_sketch(mo, territorio_36_gif):
     |:---|:---|:---|
     | **A1 delimitación** | EC | La delimitación técnica del páramo como garantía institucional |
     | **A2 concesión** | EM | Los títulos mineros como derechos adquiridos que el Estado debe respetar |
-    | **A3 hidrológico** | W1 | La regulación de acuíferos que depende del ecosistema activo |
+    | **A3 hidrológico** | W3 | La regulación técnica de acuíferos, autoridad ambiental regional sobre el ecosistema activo |
     | **A4 comunidad** | W0 | El cuidado campesino como condición del territorio, no un extra |
     | **A5 Bachué-Iguaque** | W4 | El origen mítico del pueblo muisca en la laguna |
     | **A6 cosmológico-serpiente** | W4 | La dualidad Sué/Chía y la ley del frailejón, anterior a cualquier resolución |
@@ -541,7 +544,6 @@ def territorio_grafo_sketch(mo, territorio_36_gif):
 
 @app.cell
 def desempeno_sigma_setup(ARG_IDS, ATAQUES_ARG, np):
-
     _LAM_SIGMA = {"A1_delimitacion": 2.5307, "A2_concesion": 2.7758, "A3_hidrologico": 6.5458,
                   "A4_comunidad": 2.4962, "A5_bachue_iguaque": 34.3115, "A6_cosmo_serpiente": 29.5284}
     _W0_SIGMA = {a: max(0.1, 1.0 - _LAM_SIGMA[a] / 100.0) for a in ARG_IDS}
@@ -562,21 +564,31 @@ def desempeno_sigma_setup(ARG_IDS, ATAQUES_ARG, np):
             _wt = _NEW_EDGES_SIGMA_WEIGHT.get((_b, _a), 1.0)
             _attackers_sigma[_a].append((_b, _wt))
 
-    _sigma_star = dict(_W0_SIGMA)
+    sigma_star = dict(_W0_SIGMA)
+    sigma_trace = [dict(sigma_star)]
+    sigma_n_iter = 0
     for _ in range(400):
         _nxt_sigma = {}
         for _a in ARG_IDS:
-            _den = _W0_SIGMA[_a] + sum(_wt * _sigma_star[_b] for _b, _wt in _attackers_sigma[_a])
+            _den = _W0_SIGMA[_a] + sum(_wt * sigma_star[_b] for _b, _wt in _attackers_sigma[_a])
             _nxt_sigma[_a] = _W0_SIGMA[_a] / _den if _den > 0 else _W0_SIGMA[_a]
-        if max(abs(_nxt_sigma[_k] - _sigma_star[_k]) for _k in _nxt_sigma) < 1e-7:
-            _sigma_star = _nxt_sigma
+        sigma_n_iter += 1
+        if len(sigma_trace) < 4:
+            sigma_trace.append(dict(_nxt_sigma))
+        if max(abs(_nxt_sigma[_k] - sigma_star[_k]) for _k in _nxt_sigma) < 1e-7:
+            sigma_star = _nxt_sigma
             break
-        _sigma_star = _nxt_sigma
+        sigma_star = _nxt_sigma
+    sigma_trace.append(dict(sigma_star))
+
+    sigma_w0 = dict(_W0_SIGMA)
+    sigma_atacantes = {a: list(ws) for a, ws in _attackers_sigma.items()}
 
     _AUTORIA_TIPO_SIGMA = {
-        "EC": ["A1_delimitacion"], "EM": ["A2_concesion"], "W1": ["A3_hidrologico"],
+        "EC": ["A1_delimitacion"], "EM": ["A2_concesion"], "W3": ["A3_hidrologico"],
         "W0": ["A4_comunidad"], "W4": ["A5_bachue_iguaque", "A6_cosmo_serpiente"],
     }
+    sigma_autoria = dict(_AUTORIA_TIPO_SIGMA)
 
     _cal_betas_w2w3 = [
         (8.0, 3.0), (4.0, 7.0), (8.0, 2.5), (10.0, 3.0),
@@ -590,9 +602,25 @@ def desempeno_sigma_setup(ARG_IDS, ATAQUES_ARG, np):
     desempeno = _baseline_beta.copy()
     for _actor, _args in _AUTORIA_TIPO_SIGMA.items():
         _idx = _ACTOR_IDS_ORDER.index(_actor)
-        desempeno[_idx] = float(np.mean([_sigma_star[_a] for _a in _args]))
-    # W2, W3: sin argumento propio (actores puente) -> conservan la linea base original
-    return cal_original, desempeno
+        desempeno[_idx] = float(np.mean([sigma_star[_a] for _a in _args]))
+    # W1 no tiene argumento propio en el AAF: su incidencia se expresa de manera vicaria,
+    # a traves de W0 (A4_comunidad) y de W2/JAC, no como reclamo individualmente contado.
+    # Se calibra con una Beta propia (no la linea base generica) para reflejar su
+    # arraigo territorial real en el paramo.
+    # W2: sin argumento propio (actor puente) -> conserva la linea base original.
+    _rng_w1 = np.random.default_rng(42)
+    desempeno[_ACTOR_IDS_ORDER.index("W1")] = _rng_w1.beta(10.0, 3.0)
+
+    return (
+        cal_original,
+        desempeno,
+        sigma_atacantes,
+        sigma_autoria,
+        sigma_n_iter,
+        sigma_star,
+        sigma_trace,
+        sigma_w0,
+    )
 
 
 @app.cell
@@ -608,19 +636,19 @@ def graph_data(np):
     ACTOR_IDS = ["W0", "W1", "W2", "W3", "W4", "EC", "EM"]
     n = 7
     G = np.zeros((n, n), dtype=bool)
-    for _i, _j in [(0, 1), (1, 2), (0, 2)]:
+    for _i, _j in [(0, 3), (3, 2), (0, 2)]:
         G[_i, _j] = G[_j, _i] = True
-    G[2, 3] = G[3, 2] = True
-    G[3, 4] = G[4, 3] = True
+    G[1, 2] = G[2, 1] = True
+    G[1, 4] = G[4, 1] = True
     G[5, 6] = G[6, 5] = True
     G[5, 0] = G[0, 5] = True
-    G[5, 1] = G[1, 5] = True
+    G[5, 3] = G[3, 5] = True
 
     POS = {
-        "W1": np.array([-1.5, 0.0]),
+        "W1": np.array([1.5, 0.0]),
         "W0": np.array([-0.5, 0.0]),
         "W2": np.array([0.5, 0.0]),
-        "W3": np.array([1.5, 0.0]),
+        "W3": np.array([-1.5, 0.0]),
         "W4": np.array([3.0, 0.0]),
         "EC": np.array([1.0, -1.3]),
         "EM": np.array([2.5, -1.3]),
@@ -743,7 +771,7 @@ def ucb1_round_dropdown_cell(mo):
     UCB1_CURATED = {
         "primera ronda real, tras calentamiento (t=7)": 7,
         "ronda intermedia, aun explorando (t=100)": 100,
-        "ronda tardia, asentada en W1 (t=995)": 995,
+        "ronda tardia, asentada en W3 (t=995)": 995,
     }
     ucb1_round_dropdown = mo.ui.dropdown(
         options=UCB1_CURATED, value="ronda intermedia, aun explorando (t=100)",
@@ -848,12 +876,12 @@ def ucb1_round_display(
     _uaxL.set_title(f"_ucb1_round_pure(t = {_ut})  --  paso {_uidx+1}/{len(_utrace)}",
                     fontsize=12.5, color=UNAL, fontweight="bold", loc="left")
 
-    _y0, _dy = 0.90, 0.09
+    _y0, _dy = 0.90, 0.078
     for _k, _line in enumerate(UCB1_PURE_LINES):
         _this_lineno = _k + 1
         _y = _y0 - _k * _dy
         if _this_lineno == _ulineno:
-            _uaxL.add_patch(mpatches.FancyBboxPatch((0.0, _y - 0.038), 1.0, 0.076,
+            _uaxL.add_patch(mpatches.FancyBboxPatch((0.0, _y - 0.033), 1.0, 0.066,
                 boxstyle="round,pad=0.003,rounding_size=0.008", linewidth=0,
                 facecolor=GOLD, alpha=0.35, transform=_uaxL.transAxes))
             _color, _weight = "#111", "bold"
@@ -876,16 +904,19 @@ def ucb1_round_display(
         _uloc_parts.append(f"i={ACTOR_IDS[_ui_chosen]}")
     if _ur_reward is not None:
         _uloc_parts.append(f"r={_ur_reward}")
-    _uaxL.text(0.02, _y_vals - 0.06, "\n".join(_uloc_parts) if _uloc_parts else "(ninguna aun)",
-              fontsize=9, family="monospace", color="#444", transform=_uaxL.transAxes, va="top")
+    _uaxL.text(0.02, _y_vals - 0.045, "\n".join(_uloc_parts) if _uloc_parts else "(ninguna aun)",
+              fontsize=9, family="monospace", color="#444", transform=_uaxL.transAxes, va="top", linespacing=1.0)
 
     if _uis_return:
         _i_ret, _r_ret = _uentry["returned"]
         _txt = f"RETORNA (i={ACTOR_IDS[_i_ret]}, r={_r_ret})"
-        _uaxL.add_patch(mpatches.FancyBboxPatch((0.0, _y_vals - 0.18), 1.0, 0.06,
+        _un_loc_lines = max(len(_uloc_parts), 1)
+        _uloc_block_bottom = (_y_vals - 0.045) - (_un_loc_lines - 1) * 0.017
+        _ubanner_box_y = _uloc_block_bottom - 0.018 - 0.05
+        _uaxL.add_patch(mpatches.FancyBboxPatch((0.0, _ubanner_box_y), 1.0, 0.05,
             boxstyle="round,pad=0.005,rounding_size=0.01", linewidth=0,
             facecolor=(PARAMO if _r_ret == 1 else BSTATE), alpha=0.3, transform=_uaxL.transAxes))
-        _uaxL.text(0.02, _y_vals - 0.15, _txt, fontsize=10, family="monospace", va="center",
+        _uaxL.text(0.02, _ubanner_box_y + 0.025, _txt, fontsize=10, family="monospace", va="center",
                   color="#111", fontweight="bold", transform=_uaxL.transAxes)
 
     _uaxR.set_facecolor("#f8f9fa")
@@ -997,39 +1028,34 @@ def ucb1_full_run_cell(desempeno, n, np, ucb1_round_pure_fn):
             t += 1
         return dict(n_i=n_i, t_real=t, hist_i=hist_i[:t], hist_r=hist_r[:t])
 
-    UCB1_SEED_CMP = 0
+    UCB1_SEED_CMP = 2813
     ucb1_full_result = _ucb1_full_run(UCB1_SEED_CMP)
     return (ucb1_full_result,)
 
 
 @app.cell
 def ucb1_problematisacion(ACTOR_IDS, mo, np, ucb1_full_result):
-
     _ucb1_ni_final = ucb1_full_result["n_i"]
     _ucb1_min_i = int(np.argmin(_ucb1_ni_final))
     _ucb1_max_i = int(np.argmax(_ucb1_ni_final))
 
-    mo.md(f"""
-    **Lo que UCB1 nos enseña:** la cota de confianza `μ̂ᵢ + √(2 ln t / nᵢ)` resuelve el
-    dilema exploración/explotación con una garantía formal — regret `O(log T)` —
-    sin necesitar ningún supuesto sobre la estructura de los actores.
-
-    **Lo que UCB1 problematiza, sin quererlo:** el algoritmo trata a cada actor
-    como un brazo i.i.d. `desempeno_i` ya no es un número arbitrario — viene de
-    σ*, la supervivencia de cada argumento bajo ataque interactuando en un marco dialógico — pero UCB1 no lo sabe ni le importa: lo usa exactamente igual
-    a como usaría un dato numérico ad-hoc aproximado, sin relación con quién ataca el argumento
-    de quién ni con la posición de cada actor en la red (que UCB1 nunca lee
-    — las aristas grises del seguimiento de arriba nunca entran en `mu` ni en
-    `cota`). Después de {ucb1_full_result['t_real']} episodios en esta corrida:
-    **{ACTOR_IDS[_ucb1_max_i]}** acumula {int(_ucb1_ni_final[_ucb1_max_i])} activaciones,
-    **{ACTOR_IDS[_ucb1_min_i]}** solo {int(_ucb1_ni_final[_ucb1_min_i])} — y noten
-    quién se desempeña peor: EC, el reencuadre extractivista de la delimitación técnica,
-    es ahora el que menos incidencia territorial logra sostener. UCB1 no "sabe" que está castigando a EC por perder el
-    debate — simplemente ve un número bajo y lo trata como cualquier otro.
-    Preguntar "¿cómo se concibe el `desempeño`?" es justamente lo que
-    UCB1, por diseño, nunca puede preguntarse — esa pregunta ya tenía respuesta
-    antes de que empezara esta clase, y la revelamos al cierre.
+    mo.vstack([
+        mo.md(f"""
+    **Lo que UCB1 nos enseña**
+    - **Mecanismo:** `i=argmax(μ̂+√(2 ln t/n))` — media empírica + cota de confianza (Hoeffding); regret `O(log T)` (ver nota abajo), la cota óptima de Lai-Robbins.
+    - **Indiferente a:** origen de `desempeno_i` (el desempeño discursivo de los argumentos que definen la delimitación) y a la red territorial.
+    - **Evidencia:** {ACTOR_IDS[_ucb1_max_i]}={int(_ucb1_ni_final[_ucb1_max_i])}, {ACTOR_IDS[_ucb1_min_i]}={int(_ucb1_ni_final[_ucb1_min_i])} — EM el más castigado.
+    - **Lectura situada:** delimitar así es tratar el páramo como un problema de cuál "brazo" rinde más, no de qué argumento territorial merece prevalecer.
+    """),
+        mo.accordion({
+            "\U0001F4D0 ¿Qué es T, y por qué O(log T)?": mo.md(r"""
+    - **T** es el horizonte: el número total de rondas que juega el algoritmo (aquí, T=1000 episodios; `t` indexa la ronda actual, 1≤t≤T).
+    - **O(·)** ("O grande") es una cota asintótica: R(T)=O(log T) significa que existen c>0 y T₀ tales que R(T)≤c·log(T) para todo T≥T₀ — un límite superior sobre la velocidad de crecimiento, no una fórmula exacta.
+    - **Por qué logarítmico:** la cota de confianza de un brazo subóptimo decrece como `√(ln t/nᵢ)`. Una vez jugado ~`(2 ln T)/Δᵢ²` veces (Δᵢ = brecha frente al mejor brazo), la cota cae bajo Δᵢ y UCB1 deja de confundirlo con el óptimo — el presupuesto de exploración por brazo es ~`ln T`, no ~T.
+    - **Optimalidad:** Lai & Robbins (1985) probaron que ningún algoritmo consistente hace mejor que Ω(log T); UCB1 (Auer, Cesa-Bianchi & Fischer, 2002) alcanza esa cota.
     """)
+        }),
+    ])
     return
 
 
@@ -1090,9 +1116,9 @@ def dig_trace_full(G, desempeno, n, np):
                                   alpha_before=alpha_before, beta_before=beta_before))
         return episodes
 
-    DIG_ROOT = 1  # W1 -- favorable root, unified between the debugger and the comparison
+    DIG_ROOT = 3  # W3 -- favorable root, unified between the debugger and the comparison
     DIG_DELTA = 0.10
-    DIG_SEED = 0
+    DIG_SEED = 2813
     DIG_ROOT_CMP = DIG_ROOT  # alias, kept so comparison_display's existing references still work
     DIG_SEED_CMP = DIG_SEED
     dig_episodes = _dig_full_trace(DIG_ROOT, DIG_DELTA, seed=DIG_SEED, T=1000, K=300.0)
@@ -1215,13 +1241,13 @@ def dig_pure_setup(G, desempeno, n, np):
 def episode_dropdown_cell(mo):
 
     DIG_CURATED = {
-        "ejecución inmediata (W1, 1 nodo)": 0,
-        "fallo temprano (W1-W0, 2 nodos)": 8,
-        "cascada corta con éxito (W1-W0-W2)": 20,
-        "cascada más larga (5 nodos, nunca llega a W4)": 181,
+        "ejecución inmediata (W3, 1 nodo)": 1,
+        "fallo temprano (W3-EC, 2 nodos)": 10,
+        "cascada corta con éxito (W3-W0-EC)": 8,
+        "cascada más larga (5 nodos, nunca llega a W4)": 39,
     }
     episode_dropdown = mo.ui.dropdown(
-        options=DIG_CURATED, value="cascada corta con éxito (W1-W0-W2)",
+        options=DIG_CURATED, value="cascada corta con éxito (W3-W0-EC)",
         label="episodio DIG (curado)")
     return (episode_dropdown,)
 
@@ -1364,12 +1390,12 @@ def dig_cascade_display(
     _axL.set_title(f"_dig_decide(i = {ACTOR_IDS[_actual]})  --  paso {_dig_idx+1}/{len(_trace)}",
                    fontsize=12.5, color=UNAL, fontweight="bold", loc="left")
 
-    _y0, _dy = 0.96, 0.043
+    _y0, _dy = 0.96, 0.036
     for _k, _line in enumerate(DIG_PURE_LINES):
         _this_lineno = _k + 1
         _y = _y0 - _k * _dy
         if _this_lineno == _lineno:
-            _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y - 0.019), 1.0, 0.038,
+            _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y - 0.016), 1.0, 0.032,
                 boxstyle="round,pad=0.003,rounding_size=0.008", linewidth=0,
                 facecolor=GOLD, alpha=0.35, transform=_axL.transAxes))
             _color, _weight = "#111", "bold"
@@ -1391,16 +1417,31 @@ def dig_cascade_display(
             _v = _loc[_key]
             _vs = ACTOR_IDS[_v] if _key in ("j", "m") and isinstance(_v, int) else (f"{_v:.3f}" if isinstance(_v, float) else str(_v))
             _loc_parts.append(f"{_key}={_vs}")
-    _axL.text(0.02, _y_vals - 0.05, "  ".join(_loc_parts) if _loc_parts else "(ninguna aun)",
-              fontsize=9, family="monospace", color="#444", transform=_axL.transAxes)
+    _dig_lines = []
+    if _candidatos is not None:
+        _dig_lines.append("candidatos=[" + ", ".join(ACTOR_IDS[_j] for _j in _candidatos) + "]")
+    _theta_full = _loc.get("theta")
+    if _theta_full is not None:
+        _dig_lines.append("theta=[" + ", ".join(f"{_theta_full[_k]:.3f}" for _k in range(n)) + "]")
+    _estrategias_loc = _loc.get("estrategias")
+    if _estrategias_loc is not None:
+        _dig_lines.append("estrategias={" + ", ".join(
+            f"{ACTOR_IDS[_k]}:(x={_v[0]:.2f},r={_v[1]:.2f})" for _k, _v in _estrategias_loc.items()) + "}")
+    if _loc_parts:
+        _dig_lines.append("  ".join(_loc_parts))
+    _axL.text(0.02, _y_vals - 0.035, "\n".join(_dig_lines) if _dig_lines else "(ninguna aun)",
+              fontsize=9, family="monospace", color="#444", transform=_axL.transAxes, va="top", linespacing=1.0)
 
     if _is_return:
         _accion_ret, _m_ret = _entry["returned"]
         _txt = (f"RETORNA ('{_accion_ret}', {ACTOR_IDS[_m_ret] if _m_ret is not None else None})")
-        _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y_vals - 0.13), 1.0, 0.06,
+        _n_dig_lines = max(len(_dig_lines), 1)
+        _dig_block_bottom = (_y_vals - 0.035) - (_n_dig_lines - 1) * 0.017
+        _dig_banner_box_y = _dig_block_bottom - 0.015 - 0.045
+        _axL.add_patch(mpatches.FancyBboxPatch((0.0, _dig_banner_box_y), 1.0, 0.045,
             boxstyle="round,pad=0.005,rounding_size=0.01", linewidth=0,
             facecolor=(PARAMO if _accion_ret == "execute" else GOLD), alpha=0.3, transform=_axL.transAxes))
-        _axL.text(0.02, _y_vals - 0.10, _txt, fontsize=10, family="monospace", va="center",
+        _axL.text(0.02, _dig_banner_box_y + 0.0225, _txt, fontsize=10, family="monospace", va="center",
                   color="#111", fontweight="bold", transform=_axL.transAxes)
 
     _axR.set_facecolor("#f8f9fa")
@@ -1453,7 +1494,7 @@ def dig_cascade_display(
             if "r_i1" in _loc: _lbl.append(f"r_i1={_loc['r_i1']:.2f}")
             if "r_ij" in _loc: _lbl.append(f"r_ij={_loc['r_ij']:.2f}")
             if "x_ij" in _loc: _lbl.append(f"x={_loc['x_ij']:.2f}")
-        _axR.text(_x, _y - _r - 0.30, "\\n".join(_lbl), ha="center", va="top", fontsize=8.0, color="#222", zorder=6)
+        _axR.text(_x, _y - _r - 0.30, "\n".join(_lbl), ha="center", va="top", fontsize=8.0, color="#222", zorder=6)
 
     _axR.set_xlim(POS_ARR[:, 0].min() - 1.2, POS_ARR[:, 0].max() + 1.2)
     _y_top = POS_ARR[:, 1].max() + 1.5
@@ -1481,6 +1522,13 @@ def dig_cascade_display(
     **Entrada:** `i` (nodo actual), `visitados` (cadena hasta ahora), `alpha`/`beta_` (posterior Beta
     por actor, compartida entre episodios), `delta=0.10` (umbral de confianza para delegar)
 
+    **Marco formal:** DIG es un *juego de delegación* (Definición 5, Afanador, Baptista & Oren 2019),
+    adaptación recursiva de los *quitting games* de Solan & Vieille: en cada iteración un agente
+    elige `delegar` (d) o `ejecutar` (e); si delega y el receptor elige continuar, se instancia una
+    nueva partida idéntica entre el receptor y sus propios vecinos (`ad_j`, PASO 3). `x_ij` es la
+    estrategia mixta del agente frente a j (Definición 6): la probabilidad de jugar `d`. El umbral
+    `1-delta` formaliza el estado de la naturaleza que resuelve si esa estrategia se realiza.
+
     ```
     PASO 1 — Candidatos directos                    # -> _dig_decide_pure L.2
       candidatos = { j : (i,j) en G, j no visitado }
@@ -1506,14 +1554,16 @@ def dig_cascade_display(
       si no:                   ejecutar(i)
     ```
 
-    **Por que `x_ij` mide "intensidad de delegacion":** compara cuanto mejora la opcion de
-    segundo orden (`r_i1`) sobre el candidato directo (`r_i0`), relativo a que tan lejos esta
-    `r_ij` del registro historico de j (`mu_j`). Si el candidato ya esta muy por encima de su
-    propio historial, delegar aporta poco margen adicional.
+    **Por qué `x_ij` mide "intensidad de delegación":** compara cuánto mejora la opción de
+    segundo orden (`r_i1`) sobre el candidato directo (`r_i0`), relativo a qué tan lejos está
+    `r_ij` del registro histórico de j (`mu_j`). Si el candidato ya está muy por encima de su
+    propio historial, delegar aporta poco margen adicional. Esto no es un ajuste heurístico:
+    por la Definición 6 del artículo, es la probabilidad de jugar la acción `delegar` en el
+    juego de quitting recursivo — la estrategia mixta de este agente frente a j.
 
     **Lo que el seguimiento de arriba no puede ocultar:** `visitados` crece con cada salto real —
-    por eso ninguna cascada observada llega a W4 (ver problematizacion abajo): la distancia
-    estructural, no una decision activa contra W4, es la causa.
+    por eso ninguna cascada observada llega a W4 (ver problematización abajo): la distancia
+    estructural, no una decisión activa contra W4, es la causa.
     """)
     })
 
@@ -1533,54 +1583,40 @@ def dig_cascade_display(
 @app.cell
 def dig_problematisacion(
     ACTOR_IDS,
-    desempeno,
+    DIG_ROOT_CMP,
     dig_episodes,
     dig_mu_roll,
     mo,
     ucb1_mu_roll,
 ):
-
-    _dig_far = dig_episodes[181]
+    _dig_far = dig_episodes[39]
     _dig_far_len = len(_dig_far["cadena"])
     _dig_far_ids = "-".join(ACTOR_IDS[_x] for _x in _dig_far["cadena"])
     _ucb1_late = float(ucb1_mu_roll[-100:].mean())
     _dig_late = float(dig_mu_roll[-100:].mean())
+    _dig_root_actor = ACTOR_IDS[DIG_ROOT_CMP]
 
-    mo.md(f"""
-    **Lo que DIG nos enseña:** cada nodo decide con su propio muestreo Thompson
-    (`θ ~ Beta(α,β)`) sobre delegar o ejecutar, combinando su creencia sobre un
-    candidato directo (`r_i0`) con la mejor opción de un vecino de segundo orden
-    (`r_i1`) — una cascada de decisiones distribuidas sin un árbitro central.
-    El seguimiento que acabas de recorrer muestra esa decisión línea por línea, sin
-    atajos.
+    mo.vstack([
+        mo.md(f"""
+    **DIG enseña:** `θ~Beta(α,β)` decide delegar vs. ejecutar, comparando `r_i0` (candidato directo) vs. `r_i1` (mejor vecino de 2º orden) — cascada sin árbitro central.
 
-    **Lo que DIG problematiza (I) — el mérito se homogeniza en la cadena:** la
-    cascada más larga observada en 1000 episodios (`{_dig_far_ids}`,
-    {_dig_far_len} nodos) **nunca llega a W4** — el actor de registro
-    cosmológico-territorial, el más distante en la red. No es que a través de DIG se decida
-    activamente excluir a W4: es que `visitados` crece con cada salto y el
-    vecindario de segundo orden (`ad_j`) desde donde la cascada empieza
-    simplemente no alcanza esa distancia en la topología de la red. Además, cuando la
-    cascada finalmente ejecuta, el resultado binario (éxito/fracaso) actualiza el
-    par `(α,β)` de **todos** los actores de la cadena por igual — la reputación
-    de quien decidió delegar en el primer salto queda atada al desempeño de quien
-    ejecutó al final, sin distinguir cuánto contribuyó cada quien.
+    **Problema I — mérito homogenizado:** cadena más larga ({_dig_far_ids}, {_dig_far_len} nodos) nunca llega a W4 — límite topológico (`visitados`+`ad_j`), no exclusión activa. Éxito/fracaso actualiza `(α,β)` de **toda** la cadena por igual: {_dig_root_actor} delega el primer salto, su credibilidad depende de quien ejecute varios saltos después, sin control sobre ello.
 
-    **Lo que DIG problematiza (II) — ganar en promedio no es ganar siempre:**
-    esta corrida arranca a DIG en W1, el nodo de mayor incidencia territorial
-    ({desempeno[1]:.3f}). Sobre los 1000 episodios completos, DIG termina con
-    mejor tasa de éxito y menor arrepentimiento acumulado que UCB1 — pero esa
-    ventaja proviene casi enteramente de la ventaja de salida: DIG ya "sabe"
-    desde el episodio 1 que W1 es el mejor nodo, mientras UCB1 necesita explorar
-    ~50-100 rondas para aprenderlo. Hacia el final del horizonte la historia
-    local se invierte: en las últimas 100 rondas UCB1 promedia
-    **{_ucb1_late:.3f}** de éxito, DIG solo **{_dig_late:.3f}** — una vez que
-    UCB1 converge, permanece en su mejor brazo sin desviarse, mientras la propia
-    fórmula de delegación de DIG (`x_ij`) sigue provocando, con la incidencia
-    territorial actual, delegaciones fuera de W1 incluso cuando quedarse ahí era
-    la mejor opción. Estructura real, ventaja real — pero acumulada a lo largo
-    del horizonte completo, no sostenida en cada tramo de él.
+    **Problema II — ganar en promedio ≠ ganar siempre:** ventaja de DIG es de arranque (sabe W3 desde ep.1; UCB1 tarda ~50-100 rondas). Últimas 100 rondas: UCB1={_ucb1_late:.3f} vs. DIG={_dig_late:.3f} — casi empatados.
+
+    **Lectura situada (delimitación del páramo):** así opera una cadena real de delegación —ministerio de ambiente → IAvH → contratista de campo—: quien delega al inicio hereda, en su propia credibilidad, el resultado de un trabajo de delimitación ejecutado varios eslabones después, por alguien sobre quien no tuvo ningún control.
+    """),
+        mo.accordion({
+            "\U0001F4D0 ¿Qué significan θ, r_i0/r_i1/r_ij, x_ij y 1-δ?": mo.md(r"""
+    - **θ_k ~ Beta(α_k, β_k):** muestreo de Thompson — una muestra al azar de la posterior de creencia sobre k, no un promedio ni una cota (a diferencia de la `cota` de UCB1). Beta ancha (historial corto) → muestra volátil → explora; Beta angosta (historial largo) → muestra estable → explota.
+    - **r_i0 = θ_j:** creencia sobre que j ejecute directamente.
+    - **r_i1 = max(θ_k para k en ad_j):** mejor opción si j delega de nuevo a su mejor vecino de segundo orden — anticipa la sub-partida recursiva.
+    - **r_ij = (r_i0+r_i1)/2:** promedio de ambas ramas; el candidato con mayor r_ij gana (argmax → m).
+    - **x_ij = (r_i1-r_i0)/(r_ij-mu_j):** la estrategia mixta (Definición 6, Afanador/Baptista/Oren 2019) — probabilidad de jugar "delegar" frente a j.
+    - **1-δ:** umbral de un estado de la naturaleza — si x_im lo supera, se delega; si no, se ejecuta. Es la forma concreta del ε-equilibrio de los *quitting games* (Solan & Vieille).
     """)
+        }),
+    ])
     return
 
 
@@ -1845,15 +1881,15 @@ def dec_pure_setup(G, desempeno, n, np, sys):
 @app.cell
 def dec_episode_dropdown_cell(mo):
 
-    DEC_ROOT = 3  # W3 -- favorable root, unified between the debugger and the comparison
-    DEC_SEED = 0
+    DEC_ROOT = 1  # W1 -- favorable root, unified between the debugger and the comparison
+    DEC_SEED = 2813
     DEC_CURATED = {
-        "cascada corta, cierre limpio (W3-W2)": 1,
-        "coalición de 3, cierre en W1 (W3-W2-W1)": 55,
-        "ciclo real: W2 decide dos veces (W3-W2-W0-W2)": 361,
+        "cascada corta, cierre limpio (W1-W2)": 0,
+        "coalición de 3, cierre en W3 (W1-W2-W3)": 4,
+        "ciclo real: W2 decide dos veces (W1-W2-W3-W2)": 328,
     }
     dec_episode_dropdown = mo.ui.dropdown(
-        options=DEC_CURATED, value="ciclo real: W2 decide dos veces (W3-W2-W0-W2)",
+        options=DEC_CURATED, value="ciclo real: W2 decide dos veces (W1-W2-W3-W2)",
         label="episodio DEC (curado)")
     return DEC_ROOT, DEC_SEED, dec_episode_dropdown
 
@@ -2022,12 +2058,12 @@ def dec_cascade_display(
     _axL.set_title(f"_del_pure(k_agente = {ACTOR_IDS[_dk_agente]}, profundidad = {_ddepth})  --  paso {_dec_idx+1}/{len(_dtrace)}",
                    fontsize=12.5, color=UNAL, fontweight="bold", loc="left")
 
-    _y0, _dy = 0.96, 0.052
+    _y0, _dy = 0.96, 0.042
     for _k, _line in enumerate(DEC_PURE_LINES):
         _this_lineno = _k + 1
         _y = _y0 - _k * _dy
         if _this_lineno == _dlineno:
-            _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y - 0.022), 1.0, 0.044,
+            _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y - 0.018), 1.0, 0.036,
                 boxstyle="round,pad=0.003,rounding_size=0.008", linewidth=0,
                 facecolor=GOLD, alpha=0.35, transform=_axL.transAxes))
             _color, _weight = "#111", "bold"
@@ -2056,10 +2092,10 @@ def dec_cascade_display(
     if _dis_return:
         _m2_ret, _rf_ret, _cola_ret = _dentry["returned"]
         _txt = f"RETORNA (m={ACTOR_IDS[_m2_ret]}, r={_rf_ret:.3f}, cola=[{','.join(ACTOR_IDS[_x] for _x in _cola_ret)}])"
-        _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y_vals - 0.13), 1.0, 0.06,
+        _axL.add_patch(mpatches.FancyBboxPatch((0.0, _y_vals - 0.11), 1.0, 0.05,
             boxstyle="round,pad=0.005,rounding_size=0.01", linewidth=0,
             facecolor=PARAMO, alpha=0.3, transform=_axL.transAxes))
-        _axL.text(0.02, _y_vals - 0.10, _txt, fontsize=9.3, family="monospace", va="center",
+        _axL.text(0.02, _y_vals - 0.085, _txt, fontsize=9.3, family="monospace", va="center",
                   color="#111", fontweight="bold", transform=_axL.transAxes)
 
     _axR.set_facecolor("#f8f9fa")
@@ -2136,17 +2172,25 @@ def dec_cascade_display(
     _dec_accordion = mo.accordion({
         "🔍 DEC — flujo completo (referencia, no interactivo)": mo.md(r"""
     **Entrada:** `k_agente` (nodo que decide), `r` (valor compartido por actor, mutado entre
-    episodios), `v_alloc_local`/`V_local` (asignacion base por posicion), `profundidad` (nivel de
-    recursion — cada nivel es un salto de delegacion)
+    episodios), `v_alloc_local`/`V_local` (asignación base por posición), `profundidad` (nivel de
+    recursión — cada nivel es un salto de delegación)
+
+    **Marco formal:** DEC extiende el juego de delegación (Definición 1) con una estructura
+    coalicional (Definiciones 2–4, Afanador, Oren & Baptista 2019): en vez de comparar
+    delegatarios uno a uno, forma una coalición local vía `CFORM` (Algoritmo 1, caminata
+    aleatoria sobre vecinos de `k_agente`) y usa el valor de Myerson —Shapley restringido a
+    componentes conexas— para elegir a quién delegar (Algoritmo 2, función `DEL`). El cálculo
+    recorre las cadenas de delegación mediante un retroceso recursivo en búsqueda en
+    profundidad — de ahí el argumento `profundidad`.
 
     ```
-    PASO 0 — Corte de recursion                        # -> _del_pure L.2-3
+    PASO 0 — Corte de recursión                        # -> _del_pure L.2-3
       si profundidad > n: retornar (k_agente, r[k_agente], [k_agente])
 
-    PASO 1 — Formar coalicion (CFORM, caminata aleatoria sobre vecinos de G)
+    PASO 1 — Formar coalición (CFORM, caminata aleatoria sobre vecinos de G)
       coalicion = cform(k_agente)                       # 2 a 4 nodos conectados   -> L.4
 
-    PASO 2 — Valor de Myerson dentro de la coalicion (Shapley sobre componentes conexas)
+    PASO 2 — Valor de Myerson dentro de la coalición (Shapley sobre componentes conexas)
       my = myerson_within(coalicion, r)                 # reparto justo, sum(my) = sum(r(coalicion)) -> L.5
 
     PASO 3 — Opciones de k_agente                       # -> L.6-7
@@ -2157,10 +2201,10 @@ def dec_cascade_display(
       m = argmax(opciones)                              # delegar o auto-ejecutar?
 
     PASO 5a — Delegar (m != k_agente)                    # -> L.9-14
-      pos_m = posicion de m en la coalicion
-      o_m   = valor de ejecucion muestreado ~ Uniform(v_alloc[m], V_local)
+      pos_m = posición de m en la coalición
+      o_m   = valor de ejecución muestreado ~ Uniform(v_alloc[m], V_local)
       r[m]  = pos_m * o_m / harmonic(len(coalicion))    # actualiza r COMPARTIDO — persiste entre episodios
-      DEL(m, ..., profundidad + 1)                       # recursion real de Python — el siguiente salto
+      DEL(m, ..., profundidad + 1)                       # recursión real de Python — el siguiente salto
 
     PASO 5b — Auto-ejecutar (m == k_agente)              # -> L.15-18
       o_m = valor muestreado ~ Uniform(v_alloc[k_agente], V_local)
@@ -2168,12 +2212,14 @@ def dec_cascade_display(
       retornar (k_agente, o_m, [k_agente])
     ```
 
-    **Por que esto es cooperacion, no competencia por un solo brazo:** `myerson_within` reparte
-    `sum(my) = sum(r)` entre los miembros de la coalicion — un teorema (Myerson 1977), no una esperanza
-    estadistica. Pero la decision de SEGUIR delegando (PASO 4) compara ese reparto contra el
-    valor de auto-ejecutar de `k_agente`, no contra los otros miembros — de ahi que el mismo actor
-    pueda ser convocado dos veces en una cadena (ver el episodio con ciclo en el seguimiento de
-    arriba): `DEL` no lleva un conjunto de visitados como si lo hace DIG.
+    **Por qué esto es cooperación, no competencia por un solo brazo:** `myerson_within` reparte
+    `sum(my) = sum(r)` entre los miembros de la coalición — un resultado con soporte teórico
+    (Myerson 1977), aunque aquí la función característica es aditiva (ver síntesis abajo): sin
+    sinergia entre agentes, el reparto de cada quien es exactamente su propio aporte
+    individual. Pero la decisión de SEGUIR delegando (PASO 4) compara ese reparto contra el
+    valor de auto-ejecutar de `k_agente`, no contra los otros miembros — de ahí que el mismo
+    actor pueda ser convocado dos veces en una cadena (ver el episodio con ciclo en el
+    seguimiento de arriba): `DEL` no lleva un conjunto de visitados como sí lo hace DIG.
     """)
     })
 
@@ -2246,49 +2292,31 @@ def dec_problematisacion(
     n,
     np,
 ):
-
     _dec_cnt = np.bincount(dec_full_result["ejecutor"], minlength=n)
     _dec_top = int(np.argmax(_dec_cnt))
     _dec_share = _dec_cnt[_dec_top] / len(dec_full_result["ejecutor"])
     _dec_zero = [ACTOR_IDS[i] for i in range(n) if _dec_cnt[i] == 0]
+    _dec_root_actor = ACTOR_IDS[DEC_ROOT_CMP]
 
-    mo.md(f"""
-    **Lo que DEC nos enseña:** a diferencia de UCB1 y DIG, DEC no compara el desempeño de delegatarios
-    individuales — forma una coalición (CFORM) y usa el valor de Myerson
-    (Shapley sobre componentes conexas, Def. 3–4 de Afanador/Oren/Baptista 2019)
-    para clasificarlos y elegir quién recibe la tarea territorial. Pero ese valor
-    decide *solo eso*, quién gana la comparación — no cuánto recibe nadie. La
-    recompensa real la fija una regla aparte, inversamente proporcional a la
-    posición en la cadena (`r_m = pos_m·o_m/H_k`, una regla de distribución de los beneficios territoriales).
-    Σφᵢ = v(N) es, en
-    efecto, un teorema — pero de la función característica,
-    ν(D) = Σ E[oᵢ] (Def. 2), puramente aditiva: sin sinergia entre agentes, el
-    valor de Shapley/Myerson de cada jugador es *exactamente* su aporte
-    individual (φᵢ = rᵢ, verificado aquí numéricamente en 500 ensayos,
-    diferencia de punto flotante). El resultado tiene soporte teórico; lo que
-    no describe es un reparto — describe las propiedades matemáticas de una
-    interacción que sin estar predeterminada por el comportamiento colectivo es conducente a
-    formas de cooperación.
+    mo.vstack([
+        mo.md(f"""
+    **DEC enseña:** forma coalición (CFORM); usa el valor de Myerson —extensión del valor de Shapley a juegos con estructura de grafo (el reparto que promedia la contribución marginal de cada jugador sobre todos los órdenes posibles de llegada)— para *elegir* ejecutor entre los candidatos. Pero como la función característica de DEC es aditiva (ν(D)=Σ𝔼[oᵢ], sin sinergia), ese valor de Myerson colapsa exactamente al valor individual de cada candidato (φᵢ=rᵢ) — la elección es, en efecto, comparar quién tiene el mayor `r` crudo, no una evaluación cooperativa real. La recompensa que efectivamente se paga, en cambio, viene de una regla totalmente aparte: `r_m = pos_m·o_m/H_k` (recompensa posicional armónica, al estilo de los juegos de secuenciación/aeropuerto — descuenta según el lugar en la cola, no según ningún valor cooperativo).
 
-    **Lo que DEC problematiza:** el episodio recorrido en el seguimiento
-    (`W3→W2→W0→W2`, raíz W3) muestra que **DEL no lleva un conjunto de
-    visitados** — a diferencia de DIG, el mismo actor (W2) puede ser convocado a
-    decidir dos veces en una sola cadena, sin que el algoritmo lo note como
-    ciclo. A escala completa, esta corrida arranca en {ACTOR_IDS[DEC_ROOT_CMP]}
-    ({len(dec_full_result['ejecutor'])} episodios) — y la misma ausencia de
-    memoria estructural produce aquí el resultado inverso al de la raíz W0:
-    como {ACTOR_IDS[DEC_ROOT_CMP]} está topológicamente lejos de EC (el único
-    puente hacia EM), la cascada simplemente nunca alcanza esa rama de la red.
-    Concentra **{_dec_share:.0%}** de las ejecuciones en **{ACTOR_IDS[_dec_top]}**
-    (incidencia {desempeno[_dec_top]:.3f}), mientras {', '.join(_dec_zero)} nunca
-    ejecutan ni una vez en esta corrida — la raíz misma, {ACTOR_IDS[DEC_ROOT_CMP]},
-    tampoco autoejecuta (por diseño, delegar siempre resulta al menos
-    tan bueno como ejecutar directamente). El mecanismo es idéntico al de la raíz W0, cuando la injerencia territorial se concentraba en torno a EC
-    (incidencia {desempeno[5]:.3f}, la más baja entre los seis con argumento):
-    La ceguera estructural
-    de DEC no cambia entre una raíz y otra — solo cambia si esa ceguera termina
-    premiando o castigando, según quien origine la acción sobre el territorio.
+    **Problematiza:**
+    - `ν(D)=ΣE[oᵢ]` es un juego aditivo (sin sinergia) — clase degenerada conocida en teoría de juegos cooperativos donde el valor de Shapley/Myerson de cada jugador colapsa, por teorema, a su propio valor individual: φᵢ=rᵢ exactamente (500 ensayos, verificado). "Σφᵢ=v(N)" es cierto pero vacío: no hay sinergia que redistribuir.
+    - `DEL` no lleva visitados: un actor puede decidir dos veces en una cadena (ciclo real).
+    - Desde raíz {_dec_root_actor}: {ACTOR_IDS[_dec_top]} concentra {_dec_share:.0%} de ejecuciones (incidencia {desempeno[_dec_top]:.3f}, no la más alta); {', '.join(_dec_zero)} nunca ejecutan — posición en la red territorial, no mérito.
+    - **Lectura situada (delimitación del páramo):** quién convoca la mesa de concertación predetermina, casi mecánicamente, quién termina concentrando la ejecución — el aparato cooperativo (Myerson, coaliciones, "consenso") es real, pero el resultado ya estaba decidido por quién tiene el poder de convocar, no por la fuerza del argumento territorial de nadie.
+    """),
+        mo.accordion({
+            "\U0001F4D0 Shapley y Myerson: definiciones formales, y por qué colapsan aquí": mo.md(r"""
+    - **Valor de Shapley (Definición 3, Afanador/Oren/Baptista 2019):** Shᵢ(N;ν) = Σ_{D⊆N} g_D·[ν(D)−ν(D\{i})], con g_D=(|D|-1)!(n-|D|)!/n! — el promedio ponderado de la contribución marginal de i sobre todos los órdenes posibles de formación de coaliciones.
+    - **Valor de Myerson (Definición 4):** el mismo valor de Shapley, pero evaluado sobre ν restringida a las coaliciones conexas del grafo: si D es conexa, νM(D)=ν(D); si no, νM(D)=Σ ν(Kᵢ) sobre las componentes conexas Kᵢ de D.
+    - **Por qué colapsan a φᵢ=rᵢ:** la función característica de DEC (Definición 2) es ν(D)=Σ_{i∈D}𝔼[oᵢ] — puramente aditiva, sin sinergia entre agentes. Para cualquier D que contenga a i, la contribución marginal ν(D)−ν(D\{i}) es siempre 𝔼[oᵢ], sin importar quién más esté en D. Como los pesos de Shapley suman 1, el promedio de una cantidad constante es esa misma cantidad: Shᵢ=Myᵢ=𝔼[oᵢ], exacto, no una aproximación.
+    - **Lo que sí es no-trivial:** la regla de recompensa `r_m=pos_m·o_m/H_k` (armónica, posicional) es aparte — Myerson solo elige a m (argmax de los φᵢ); esta otra fórmula es la que efectivamente paga.
     """)
+        }),
+    ])
     return
 
 
@@ -2360,7 +2388,6 @@ def comparison_metrics(
     coop_ucb1 = 0.0
     coop_dig  = float((dig_lc >= 2).mean() * 100)
     coop_dec  = float((dec_lc >= 2).mean() * 100)
-
     return (
         coop_dec,
         coop_dig,
@@ -2487,62 +2514,63 @@ def comparison_display(
     _dig_self_exec_note = float((dig_lc == 1).mean())
 
     _ucb1_win_nota = mo.callout(mo.md(f"""
-    **¿Por que DIG y DEC ganan aqui? — y ¿por qué no es un resultado universal?** Esta corrida
-    arranca DIG en {ACTOR_IDS[DIG_ROOT_CMP]} y DEC en {ACTOR_IDS[DEC_ROOT_CMP]}, con semilla
-    {DIG_SEED_CMP} para los tres mecanismos. No son raices arbitrarias: un barrido de 2000
-    semillas x 7 raices muestra que DIG solo supera a UCB1 (éxito y arrepentimiento a la vez)
-    partiendo de {ACTOR_IDS[DIG_ROOT_CMP]} o W2 — las dos raices de mayor incidencia — y DEC
-    solo lo supera partiendo de W3 o W4 — las dos raices topologicamente mas lejanas de EC.
-    Nunca ambas desde la misma raiz. 
+    **¿Por qué DIG y DEC ganan aquí?** Semilla {DIG_SEED_CMP}, DIG arranca en
+    {ACTOR_IDS[DIG_ROOT_CMP]}, DEC en {ACTOR_IDS[DEC_ROOT_CMP]}.
 
-    **DIG:** la fórmula de intensidad de delegacion `x_ij = (r_i1-r_i0)/(r_ij-mu_j)` es la
+    **DIG:** la fórmula de intensidad de delegación `x_ij = (r_i1-r_i0)/(r_ij-mu_j)` es la
     misma de siempre — el denominador se acerca a cero cuando la incidencia territorial está
     agrupada en valores altos, introduciendo ruido en la decisión. En esta corrida, DIG autoejecuta
-    en el **{_dig_self_exec_note:.1%}** de los episodios. La diferencia frente a partir de W0
-    no es que la formula se haya estabilizado — es que autoejecutar en
+    en el **{_dig_self_exec_note:.1%}** de los episodios: autoejecutar en
     {ACTOR_IDS[DIG_ROOT_CMP]} (incidencia {desempeno[DIG_ROOT_CMP]:.3f}, la más alta en la
-    red) es la mejor decision posible. La misma inestabilidad que hundía a DIG en W0 aqui es
-    inofensiva.
+    red) es, casi siempre, la mejor decisión posible.
 
-    **DEC:** el mecanismo es idéntico al de la raiz W0 — la cascada de coalición nunca
-    consulta la incidencia territorial para decidir quién ejecuta, solo la posición en la red.
-    Desde {ACTOR_IDS[DEC_ROOT_CMP]}, esa ceguera estructural nunca alcanza a EC/EM
-    (topologicamente lejos): concentra **{_dec_share_note:.0%}** de las ejecuciones en
-    **{ACTOR_IDS[_dec_top_note]}** (incidencia {desempeno[_dec_top_note]:.3f}). Desde W0, la
-    misma ceguera concentraba en EC (incidencia {desempeno[5]:.3f}, la mas baja).
+    **DEC:** la cascada de coalición nunca consulta la incidencia territorial para decidir
+    quién ejecuta, solo la posición en la red — y el valor inicial que reparte tampoco
+    depende del desempeño de cada actor, sino de su distancia estructural a la raíz. Desde
+    {ACTOR_IDS[DEC_ROOT_CMP]}, esa ceguera estructural concentra **{_dec_share_note:.0%}**
+    de las ejecuciones en **{ACTOR_IDS[_dec_top_note]}** (incidencia
+    {desempeno[_dec_top_note]:.3f}) — ni siquiera el actor de mayor incidencia territorial
+    de los siete.
 
-    **Lo que esto no prueba:** que DIG o DEC sean "mejores" que UCB1 en general. Prueba que su
-    sensibilidad estructural — a diferencia del muestreo plano de UCB1, que no depende de
-    ningun punto de partida — tiene efectos importantes según donde arranque la cascada.
+    **Lectura situada:** DIG y DEC sí ganan aquí por una razón real: leen la red territorial
+    —a quién delega cada actor, su posición desde la raíz— mientras UCB1 muestrea a ciegas,
+    sin ninguna noción de vecindad. Pero esa sensibilidad estructural no toca el contenido:
+    ninguno consulta los argumentos que, vía σ*, produjeron la incidencia que están
+    optimizando. Conocer la red no es conocer lo que se discute en ella.
     """), kind="warn")
 
     _gini_warn = mo.callout(mo.md(f"""
-    **¿Qué mide este Gini? — una variable de recompensa NATIVA a cada mecanismo, diferente
-    a conteos de exito:** cada barra usa exactamente la cantidad que ese algoritmo
-    consulta al decidir. **UCB1** no tiene una
-    creencia aislable de su criterio de asignación (`mu+cota` mezcla valor con un término
-    de exploración ligado a visitas, no a recompensa) — usa su acumulador de
-    recompensa bruto post-calentamiento (`suma_i`). **DIG** usa la creencia final
-    `mu_j = alpha_j/(alpha_j+beta_j)` — la misma cantidad que cualquier otro
-    agente consulta al evaluar a j como candidato. **DEC** usa el `r_i` final —
-    la misma cantidad que su comparacion argmax lee directamente.
+    **¿Qué mide este Gini?** La variable de valor **nativa** de cada mecanismo, no conteos de
+    éxito — exactamente lo que cada algoritmo consulta al decidir.
 
-    **Resultado:** DIG **{gini_dig:.3f}**, DEC **{gini_dec:.3f}**, UCB1
-    **{gini_ucb1:.3f}**. DIG tiene la
-    creencia final mas equitativa de los tres — su actualización de reputación
-    alcanza a TODOS los actores de cada cadena, no solo a quien ejecuta, así que
-    la creencia final refleja cuantas cadenas pasaron por cada actor, no sólo
-    cuantas veces ejecuto. DEC queda en el intermedio: `r` se redibuja con un muestreo
-    Uniforme acotado cada vez que alguien gana, asi que no se acumula sin limite
-    como un conteo — pero W3/EC/EM no ganan ni una vez en esta corrida, así
-    que su `r` nunca se actualiza desde la asignacion inicial. UCB1 muestra mayor
-    concentracion que DIG/DEC porque `suma_i` es un conteo bruto que se acumula
-    sin limite en los brazos mas visitados.
+    - **UCB1:** `suma_i` — una suma **bruta**: cada éxito de i se suma, sin restar, decaer ni
+      normalizar nunca. No es una "creencia" (una estimación 0–1 de qué tan bueno es i) porque
+      UCB1 nunca calcula una por separado — su `mu+cota` mezcla valor con un bono de
+      exploración atado a cuántas veces visitó a i, no a su recompensa.
+    - **DIG:** `mu_j = alpha_j/(alpha_j+beta_j)` — sí es una **creencia**: una probabilidad
+      posterior normalizada que resume el historial de j, y que cualquier otro agente puede
+      leer para evaluarlo como candidato.
+    - **DEC:** `r_i` final — ni conteo bruto ni probabilidad: es la **cantidad** exacta que la
+      comparación `argmax` de DEC lee para decidir quién gana.
 
-    *Activación cooperativa* (% episodios con >=2 actores en la cadena): **UCB1: 0%** — un solo brazo por episodio, por definicion. **DIG y DEC** involucran multiples actores por
-    episodio, pero por mecanismos distintos: DIG se detiene cuando la confianza
-    delegada supera el umbral; DEC siempre delega desde la raiz salvo que la raiz
-    misma gane su propia comparación Myerson.
+    **Resultado:** DIG **{gini_dig:.3f}**, DEC **{gini_dec:.3f}**, UCB1 **{gini_ucb1:.3f}**.
+
+    **Lectura situada:** cuál de estas tres cantidades usa cada algoritmo decide, en la
+    práctica, quién acumula reconocimiento institucional legible con el tiempo. UCB1
+    concentra más porque su suma bruta premia solo a quien ya fue visitado — invisibiliza a
+    quien nunca tuvo la oportunidad de acumular, sin importar su desempeño. DIG reparte más
+    porque su creencia se actualiza en toda la cadena, no solo en quien ejecuta — un actor
+    vicario (como {ACTOR_IDS[DEC_ROOT_CMP]}) puede acumular pie de historial sin ejecutar
+    nunca, lo cual reparte reconocimiento pero también responsabilidad sin agencia directa.
+    DEC queda en medio porque su `r` se redibuja acotado en cada victoria — nunca olvida del
+    todo a quien pierde, pero tampoco premia de forma acumulativa a quien rinde bien de forma
+    sostenida.
+
+    *Detalle matemático (para preguntas): Gini = 2·Σᵢ i·xᵢ / (n·Σxᵢ) − (n+1)/n, sobre valores
+    ordenados ascendentemente — la forma discreta estándar, equivalente al doble del área
+    entre la curva de Lorenz y la diagonal de igualdad. Con n={n} actores, la concentración
+    total en un solo actor da el máximo teórico (n-1)/n={(n-1)/n:.3f}, la línea punteada de
+    la figura.*
     """), kind="warn")
 
     _comparacion_detalle = mo.accordion({
@@ -2551,6 +2579,7 @@ def comparison_display(
     })
 
     mo.vstack([fig_cmp, _comparacion_detalle])
+
     return
 
 
@@ -2575,7 +2604,7 @@ def aaf_data():
     ARG_ACTOR = {
         "A1_delimitacion": "Estado colombiano (EC)",
         "A2_concesion": "Empresa de materiales (EM)",
-        "A3_hidrologico": "Manejo Comunitario del Agua (W1)",
+        "A3_hidrologico": "Autoridad Ambiental Regional (W3, CAR)",
         "A4_comunidad": "Comunidades campesinas paramunas (W0)",
         "A5_bachue_iguaque": "Pueblo Muisca (W4)",
         "A6_cosmo_serpiente": "Pueblo Muisca (W4)",
@@ -2640,6 +2669,7 @@ def aaf_dung_pure(ARG_IDS, ATAQUES_ARG):
 
 @app.cell
 def aaf_dung_display(
+    ACTOR_IDS,
     ARG_ACTOR,
     ARG_IDS,
     ATAQUES_ARG,
@@ -2647,6 +2677,7 @@ def aaf_dung_display(
     PARAMO,
     UNAL,
     aaf_preferred,
+    desempeno,
     mo,
     mpatches,
     np,
@@ -2658,6 +2689,12 @@ def aaf_dung_display(
     sbm36_palette,
     sbm36_pos,
     sbm36_type_order,
+    sigma_atacantes,
+    sigma_autoria,
+    sigma_n_iter,
+    sigma_star,
+    sigma_trace,
+    sigma_w0,
 ):
     _ARG_POS = {
         "A3_hidrologico":     np.array([-4.2,  1.4]),
@@ -2745,6 +2782,52 @@ def aaf_dung_display(
         "<pre style=\"background:#f4f4f4;padding:12px;border-radius:4px;font-size:12.5px;line-height:1.45;overflow-x:auto\">"
         + "\n".join(_deriv_lines) + "</pre>")
 
+    _sigma_lines = [
+        "SEMÁNTICA GRADUAL h-categorizadora (Libman, Oren & Yun 2024, Def. 2.7)",
+        "  sigma*(a) = w(a) / ( w(a) + suma_{b ataca a} peso(b,a)*sigma*(b) )",
+        "",
+        "PESOS INICIALES w(a)  (BETO/fluidez textual + ajuste de autoridad legal en A1)",
+    ]
+    for _a36 in ARG_IDS:
+        _sigma_lines.append(f"  w({_short(_a36)}) = {sigma_w0[_a36]:.4f}")
+    _sigma_lines.append("")
+    _sigma_lines.append("ATACANTES Y PESOS")
+    for _a36 in ARG_IDS:
+        _atk36 = sigma_atacantes[_a36]
+        if not _atk36:
+            _sigma_lines.append(f"  {_short(_a36)}: sin atacantes")
+        else:
+            _sigma_lines.append(f"  {_short(_a36)} <- " + ", ".join(f"{_short(_b36)} (peso {_w36})" for _b36, _w36 in _atk36))
+    _sigma_lines.append("")
+    _sigma_lines.append("ITERACIÓN — punto fijo garantizado por Tarski (monótono), no por Banach (no contractivo)")
+    for _i36 in (0, 1, 2, 3):
+        _snap36 = sigma_trace[_i36]
+        _sigma_lines.append(f"  iter {_i36}: " + ", ".join(f"{_short(_a36)}={_snap36[_a36]:.3f}" for _a36 in ARG_IDS))
+    _sigma_lines.append("  ...")
+    _sigma_lines.append(f"  iter {sigma_n_iter} (convergencia, |Δ|<1e-7): "
+                         + ", ".join(f"{_short(_a36)}={sigma_trace[-1][_a36]:.3f}" for _a36 in ARG_IDS))
+    _sigma_lines.append("")
+    _sigma_lines.append(f"=> converge en {sigma_n_iter} iteraciones locales — el mismo costo con 6 argumentos que con "
+                         "36 o 3600: escala con el número de aristas de ataque, no con 2^n.")
+    _sigma_lines.append("")
+    _sigma_lines.append("COINCIDENCIA CON desempeño (verificada en vivo, no una coincidencia aparente)")
+    for _actor36 in ["EC", "EM", "W3", "W0", "W4"]:
+        _idx36 = ACTOR_IDS.index(_actor36)
+        _args36 = sigma_autoria[_actor36]
+        _expected36 = float(np.mean([sigma_star[_a36] for _a36 in _args36]))
+        _match36 = abs(desempeno[_idx36] - _expected36) < 1e-9
+        if len(_args36) > 1:
+            _rhs36 = "media(" + ", ".join(f"sigma*({_short(_a36)})" for _a36 in _args36) + ")"
+        else:
+            _rhs36 = f"sigma*({_short(_args36[0])})"
+        _sigma_lines.append(f"  desempeno[{_actor36}] = {desempeno[_idx36]:.6f}  =  {_rhs36} = {_expected36:.6f}   "
+                             + ("[match exacto]" if _match36 else "[NO COINCIDE]"))
+
+    _sigma_deriv = mo.md(
+        "**Cómputo de σ* — semántica gradual (Libman, Oren & Yun 2024), sobre los pesos y ataques reales**\n\n"
+        "<pre style=\"background:#f4f4f4;padding:12px;border-radius:4px;font-size:12.5px;line-height:1.45;overflow-x:auto\">"
+        + "\n".join(_sigma_lines) + "</pre>")
+
 
 
     _ax_aaf.set_xlim(-5.3, 5.3); _ax_aaf.set_ylim(-3.1, 3.0)
@@ -2752,6 +2835,14 @@ def aaf_dung_display(
     _ax_aaf.set_title("AAF de Dung (1995) sobre los 6 argumentos — dos extensiones preferidas en pugna",
                        fontsize=12.5, color=UNAL, fontweight="bold")
     plt.tight_layout()
+
+    _com_sigmas = [sigma_star[a] for a in _pref_comunidad]
+    _ext_sigmas = [sigma_star[a] for a in _pref_extractivo]
+    _min_com_sigma = min(_com_sigmas)
+    _max_ext_sigma = max(_ext_sigmas)
+    _min_sigma_arg = min(sigma_star, key=sigma_star.get)
+    _min_sigma_val = sigma_star[_min_sigma_arg]
+    _min_sigma_lbl = _min_sigma_arg.split("_")[0]
 
     _aaf_nota = mo.callout(mo.md(f"""
     **Desempeño y argumentación.** `desempeño` — la variable de referencia para UCB1, DIG y DEC 
@@ -2765,12 +2856,24 @@ def aaf_dung_display(
     **{{{_ext_txt}}}** (bloque extractivo) frente a **{{{_com_txt}}}** (comunidad,
     ciencia ambiental, cosmologia muisca) — sin criterio para elegir entre ellas.
 
-    **σ* no elige: gradúa.** Le da a cada argumento un numero continuo de
-    supervivencia bajo ataque real, y ese número fue nuestro `desempeño` desde la primera
-    diapositiva. El MAB nunca supo que su insumo tenía esta historia detrás.
+    **σ* no elige entre argumentos discretos —pero sí falla entre lecturas.** Le da a
+    cada argumento un número continuo de supervivencia bajo ataque real: aquí, todo
+    **{{{_com_txt}}}** completo ({{{_min_com_sigma:.3f}}}–{{{max(_com_sigmas):.3f}}}) queda
+    por encima de todo **{{{_ext_txt}}}** completo ({{{min(_ext_sigmas):.3f}}}–{{{_max_ext_sigma:.3f}}}),
+    sin traslape — donde Dung clásico empataba, σ* resuelve a favor de una lectura. Y la
+    derrota nunca es total: incluso **{{{_min_sigma_lbl}}}** ({{{_min_sigma_val:.3f}}}), el
+    más disputado, mantiene un σ* positivo —el denominador de la fórmula es siempre al
+    menos w(a)>0. Ese número, ya calculado desde antes, es lo que se convirtió en el
+    `desempeño` desde la primera diapositiva —y explica, en particular, por qué EC y EM
+    tuvieron la incidencia territorial más baja de los siete actores desde el principio:
+    su `desempeño` ES, literalmente, el σ* de A1 y A2 aquí mostrado. El MAB nunca supo
+    que su insumo tenía esta historia detrás.
     """), kind="success")
 
-    _aaf_apertura = mo.accordion({"Desempeño y argumentación": _aaf_nota})
+    _aaf_apertura = mo.accordion({
+        "Desempeño y argumentación": mo.vstack([_aaf_nota, _sigma_deriv]),
+        "Detalle: cómputo de admisibilidad (Dung 1995)": _aaf_deriv,
+    })
 
 
     import plotly.graph_objects as _pgo
@@ -2856,77 +2959,114 @@ def aaf_dung_display(
                     font=dict(size=11, color="#111")),
         margin=dict(l=0, r=120, b=0, t=55),
         paper_bgcolor="#f8f9fa")
-    import base64 as _b64_3d
-    _png3d_bytes = _pgo_3d.to_image(format="png", width=900, height=620, scale=2)
-    _png3d_b64 = _b64_3d.b64encode(_png3d_bytes).decode()
-    _sbm3d_ui = mo.Html(
-        '<div style="width:100%;margin:auto">'
-        f'<img src="data:image/png;base64,{_png3d_b64}" style="width:100%;border-radius:4px"/>'
-        '</div>')
+    _sbm3d_ui = mo.ui.plotly(_pgo_3d)
 
-    _aaf_thesis = mo.callout(mo.md(r"""
+    _aaf_thesis = mo.callout(mo.md(rf"""
     ¿Y la IA en crowdsourcing? No dictamina `desempeño` como un oraculo — genera
     argumentos. Los 30 variantes que crecieron por tema en la apertura, y que el
     SBM confirma arriba, son justo eso: lo que una IA produciría si parafraseara
-    cada posicion base. Frente a esa proliferación, lo justo no es asignarle a
-    cada argumento nuevo una expectativa de recompensa externa y ad-hoc — como
-    hizo el MAB con `desempeno` toda la clase — sino evaluarlo por su contenido
-    dialógico y territorial: quién lo ataca, a quien defiende, donde sobrevive en
-    la red real. Esa evaluación relacional es exactamente lo que hace σ*: la
-    semántica gradual, no el MAB, es la herramienta que le corresponde a la IA en
-    este territorio.
+    cada posicion base.
+
+    Y no es solo una cuestión de principio, es de viabilidad: la admisibilidad
+    clásica de Dung —la que acaban de ver, sobre solo seis argumentos— exige
+    revisar sus 2^6=64 subconjuntos posibles; extendida a los 36 nodos de este
+    panel, serían 2^36≈68 mil millones. σ&ast;, en cambio, es la misma iteración
+    local de punto fijo que ya vieron converger en {sigma_n_iter} pasos sobre los
+    seis argumentos reales —su costo crece con las aristas de ataque, no con 2^n.
+    Por eso σ&ast; fue, desde la primera diapositiva, el ancla numérica de
+    `desempeño`, y por eso sigue siendo la herramienta viable si la proliferación
+    de argumentos de una IA —como estos 36— tuviera que evaluarse de verdad, uno
+    por uno.
+
+    Frente a esa proliferación, lo justo no es asignarle a cada argumento nuevo
+    una expectativa de recompensa externa y ad-hoc — como hizo el MAB con
+    `desempeno` toda la clase — sino evaluarlo por su contenido dialógico y
+    territorial: quién lo ataca, a quien defiende, donde sobrevive en la red
+    real. Esa evaluación relacional es exactamente lo que hace σ*: la semántica
+    gradual, no el MAB, es la herramienta que le corresponde a la IA en este
+    territorio.
     """), kind="success")
 
-    _aaf_cierre = mo.accordion({
-        "¿Y la IA en crowdsourcing?": _aaf_thesis,
-        "Detalle: computo de admisibilidad (Dung 1995) — para preguntas": _aaf_deriv,
-    })
+    _aaf_cierre = mo.accordion({"¿Y la IA en crowdsourcing?": _aaf_thesis})
 
     mo.vstack([_fig_aaf, _aaf_apertura, _sbm3d_ui, _aaf_cierre])
     return
 
 
 @app.cell
-def conclusiones_display(mo):
-    _concl_ucb1 = mo.md(r"""
-    UCB1 explora y converge de manera óptima sobre `desempeño` — pero jamás
-    pregunta qué es ese número ni de dónde sale. En un proceso real de
-    delimitación del páramo, tratar la "incidencia territorial" de cada actor
-    como un dato exógeno equivale a aceptar sin auditoría quién tiene voz
-    válida: sea que ese número venga de un sorteo arbitrario o de una historia
-    argumentativa (como vimos al cierre), UCB1 correría idéntico. Su
-    eficiencia es comprobada; su ceguera a la procedencia del número, también.
+def conclusiones_display(coop_dec, coop_dig, mo):
+    _leccion_ucb1 = mo.md(r"""
+    **UCB1:** media empírica + cota de confianza (Hoeffding) alcanza el óptimo de
+    Lai-Robbins (`O(log T)`) — pero es indiferente al origen de `desempeño` y a
+    toda la red territorial: compara brazos, no argumentos.
     """)
 
-    _concl_dig = mo.md(r"""
-    La cascada de delegación de DIG parece más situada que la comparación plana
-    de UCB1 — cada nodo consulta a su vecindario, no sólo a sí mismo. Pero su
-    fórmula de intensidad de delegación se vuelve inestable justo cuando la
-    incidencia está agrupada en valores altos,
-    y solo supera a UCB1 cuando arranca en el actor de mayor incidencia (W1 o
-    W2), nunca desde otra raíz. Para la delimitación del páramo esto dice algo
-    serio: enrutar autoridad deliberativa a través de relaciones de confianza tiene efectos preferibles
-    a los de una comparación plana — pero quien convoca el proceso (la raíz)
-    puede decidir el resultado por sí mismo.
+    _leccion_dig = mo.md(f"""
+    **DIG:** cascada de delegación vía muestreo de Thompson (`θ~Beta(α,β)`) y
+    estrategia mixta `x_ij` — a diferencia de UCB1, consulta la red territorial:
+    quién puede delegar en quién. Su activación cooperativa
+    (`{coop_dig:.1f}%` de episodios con cadena ≥2) muestra que más de un actor
+    participa en la mayoría de las decisiones — la oportunidad de ser parte del
+    proceso de delimitación, no solo el resultado final, es un efecto deseable
+    de este diseño.
     """)
 
-    _concl_dec = mo.md(r"""
-    DEC forma coaliciones y calcula valores de Myerson — pero en esta clase
-    verificamos que su función característica (ν(D)=Σ E[oᵢ]) es aditiva: 
-    sin sinergia entre agentes, el valor de Myerson de cada
-    actor es exactamente su propio aporte, lo cual reduce su ímpetu cooperativo.
-    Redistribución genuina solo apareció cuando
-    inyectamos sinergia a propósito — una prima por diversidad epistémica entre
-    registros — y esa corrección redujo el desempeño de los actores. Para el páramo: llamar
-    "coalición" o "cooperativo" a un mecanismo no lo hace justo automáticamente;
-    la equidad tiene que diseñarse a propósito en lo que el mecanismo premia, y
-    ese diseño tiene implicaciones estructurales.
+    _leccion_dec = mo.md(f"""
+    **DEC:** forma coalición (CFORM) y calcula valores de Myerson: cada episodio
+    es, por construcción, una coalición (`{coop_dec:.0f}%` de activación
+    cooperativa) — el mecanismo evoca genuinamente un proceso de concertación,
+    no una comparación aislada de brazos. Su función característica aditiva
+    (`ν(D)=ΣE[oᵢ]`) hace que Myerson colapse al valor individual (`φᵢ=rᵢ`), pero
+    el gesto de convocar y hacer participar sigue siendo concreto.
     """)
+
+    _leccion_comparacion = mo.md(r"""
+    **Comparados lado a lado:** DIG y DEC sí leen la red territorial y hacen
+    participar a más actores en el proceso —a diferencia del muestreo aislado de
+    UCB1—; lo que ninguno hace es evaluar el contenido argumentativo (σ*) que ya
+    había definido, desde el principio, la incidencia de cada actor.
+    """)
+
+    _lecciones_callout = mo.callout(
+        mo.vstack([_leccion_ucb1, _leccion_dig, _leccion_dec, _leccion_comparacion]),
+        kind="info")
+
+    _situada_ucb1 = mo.md(r"""
+    **UCB1:** delimitar así es tratar el páramo como el problema de cuál "brazo"
+    rinde más, no de qué argumento territorial merece prevalecer.
+    """)
+
+    _situada_dig = mo.md(r"""
+    **DIG:** así opera una cadena de delegación —ministerio de ambiente →
+    IAvH → contratista de campo—: quien delega al inicio comparte, en su propia
+    credibilidad, el resultado de un trabajo de delimitación ejecutado varios
+    eslabones después. Que ese actor sea convocado a participar del proceso, en
+    primer lugar, ya es parte de lo que está en juego territorialmente.
+    """)
+
+    _situada_dec = mo.md(r"""
+    **DEC:** quién convoca la mesa de concertación importa: define quién llega a
+    participar del proceso de delimitación, no solo quién termina ejecutando.
+    Ese gesto de convocar —de hacer parte de una coalición a actores que UCB1 ni
+    siquiera consultaría— es en sí mismo un efecto territorial deseable; el
+    límite es que, una vez convocados, el reparto de beneficios entre ellos no
+    distingue mérito argumentativo del propio poder de convocatoria.
+    """)
+
+    _situada_comparacion = mo.md(r"""
+    **Comparados lado a lado:** conocer la red territorial no es conocer lo que
+    se discute en ella — ninguno de los tres mecanismos evalúa jamás el
+    contenido argumentativo sobre el cual σ* sí nos permite razonar.
+    """)
+
+    _situadas_callout = mo.callout(
+        mo.vstack([_situada_ucb1, _situada_dig, _situada_dec, _situada_comparacion]),
+        kind="success")
 
     _concl_futuro = mo.md(r"""
     **Orientación para trabajo futuro:**  Lo que queda como horizonte es la siguiente
     capa: (1) el filtro BETO/τ, que atenuaría A5/A6 por su distancia al corpus de
-    entrenamiento — una medida de familiaridad corporal, no de validez argumentativa
+    entrenamiento — una medida de familiaridad corpórea, no de validez argumentativa
     — y (2) la confirmación topológica: un SBM sobre una
     expansión de 36 nodos (6 argumentos base + variantes) que encuentra las mismas
     mesoestructuras de silenciamiento sin leer una sola palabra de texto. Esa
@@ -2934,16 +3074,16 @@ def conclusiones_display(mo):
     """)
 
     _conclusiones_accordion = mo.accordion({
-        "UCB1 — la eficiencia que nunca pregunta de dónde viene el número": _concl_ucb1,
-        "DIG — la delegación relacional que solo funciona si arranca bien": _concl_dig,
-        "DEC — coalición no es lo mismo que cooperación": _concl_dec,
+        "¿Qué aprendimos de cada mecanismo?": _lecciones_callout,
+        "¿Qué le dice a la delimitación del páramo?": _situadas_callout,
         "Orientación para trabajo futuro": _concl_futuro,
     })
 
     mo.vstack([
-        mo.md("## Conclusiones — ¿qué aprendimos de cada mecanismo?, y ¿qué le dice a la delimitación del páramo?"),
+        mo.md("## Conclusiones"),
         _conclusiones_accordion,
     ])
+
     return
 
 
